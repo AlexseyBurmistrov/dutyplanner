@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Система Планирования Дежурств</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Навигация -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-shield-alt me-2"></i>Планировщик Дежурств
+            </a>
+            <div class="navbar-nav ms-auto">
+                <div class="d-flex align-items-center">
+                    <div id="currentTime" class="text-white me-3"></div>
+                    <button class="btn btn-outline-light btn-sm" onclick="app.openSystemSettings()">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <div class="container-fluid mt-3">
+        <!-- Навигация по вкладкам -->
+        <ul class="nav nav-tabs mb-3" id="mainTabs">
+            <li class="nav-item">
+                <a class="nav-link active" href="#schedule" data-bs-toggle="tab">
+                    <i class="fas fa-calendar-alt me-1"></i>Расписание
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#users" data-bs-toggle="tab">
+                    <i class="fas fa-users me-1"></i>Сотрудники
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#absences" data-bs-toggle="tab">
+                    <i class="fas fa-user-slash me-1"></i>Отсутствия
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#statistics" data-bs-toggle="tab">
+                    <i class="fas fa-chart-bar me-1"></i>Статистика
+                </a>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- Вкладка Расписание -->
+            <div class="tab-pane fade show active" id="schedule">
+                <div class="row">
+                    <!-- Левая панель -->
+                    <div class="col-md-3">
+                        <!-- Текущее дежурство -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-user-clock me-1"></i>Текущее Дежурство
+                                </h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <div id="currentDutyPerson" class="h5 mb-2">Не назначено</div>
+                                <div id="currentDutyTime" class="text-muted small"></div>
+                                <div id="currentDutyPeriod" class="text-muted small"></div>
+                            </div>
+                        </div>
+
+                        <!-- Статистика недели -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="card-title mb-0">Статистика недели</h6>
+                            </div>
+                            <div class="card-body p-2">
+                                <div class="row text-center small">
+                                    <div class="col-6 mb-2">
+                                        <div class="text-success">
+                                            <div class="fw-bold" id="weekAssigned">0</div>
+                                            <div>Назначено</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-2">
+                                        <div class="text-danger">
+                                            <div class="fw-bold" id="weekEmpty">0</div>
+                                            <div>Свободно</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-2">
+                                        <div class="text-warning">
+                                            <div class="fw-bold" id="weekAbsent">0</div>
+                                            <div>Отсутствуют</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-2">
+                                        <div class="text-primary">
+                                            <div class="fw-bold" id="weekTotal">0</div>
+                                            <div>Всего слотов</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 mt-2">
+                                        <div class="text-secondary">
+                                            <div class="fw-bold" id="weekAverage">0</div>
+                                            <div>В среднем на человека</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Текущие отсутствия -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-user-slash me-1"></i>Текущие отсутствия
+                                </h6>
+                            </div>
+                            <div class="card-body p-2">
+                                <div id="currentAbsencesList">
+                                    <!-- Список будет заполнен JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Календарь -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="card-title mb-0">Календарь</h6>
+                            </div>
+                            <div class="card-body p-2">
+                                <div id="miniCalendar"></div>
+                            </div>
+                        </div>
+
+                        <!-- Быстрые действия -->
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="card-title mb-0">Действия</h6>
+                            </div>
+                            <div class="card-body">
+                                <button class="btn btn-warning btn-sm w-100 mb-2" onclick="app.clearCurrentWeek()">
+                                    <i class="fas fa-broom me-1"></i>Очистить неделю
+                                </button>
+                                <button class="btn btn-secondary btn-sm w-100" onclick="app.openWeekSettings()">
+                                    <i class="fas fa-cog me-1"></i>Настройки недели
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Основная область - Сетка дежурств -->
+                    <div class="col-md-9">
+                        <!-- Навигация по неделям -->
+                        <div class="card mb-3">
+                            <div class="card-body py-2">
+                                <div class="row align-items-center">
+                                    <div class="col-md-6">
+                                        <div class="btn-group">
+                                            <button class="btn btn-outline-primary btn-sm" onclick="app.changeWeek(-1)">
+                                                <i class="fas fa-chevron-left"></i> Пред. неделя
+                                            </button>
+                                            <button class="btn btn-outline-primary btn-sm" onclick="app.changeWeek(1)">
+                                                След. неделя <i class="fas fa-chevron-right"></i>
+                                            </button>
+                                        </div>
+                                        <button class="btn btn-outline-success btn-sm ms-2" onclick="app.goToCurrentWeek()">
+                                            <i class="fas fa-calendar-day"></i> Текущая неделя
+                                        </button>
+                                    </div>
+                                    <div class="col-md-6 text-end">
+                                        <h5 class="mb-0" id="currentWeekRange">Текущая неделя</h5>
+                                        <small class="text-muted" id="workDaysInfo"></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Сетка дежурств -->
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-table me-2"></i>Расписание дежурств
+                                </h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <div id="dutyGrid" class="duty-grid">
+                                    <!-- Сетка будет сгенерирована JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Вкладка Сотрудники -->
+            <div class="tab-pane fade" id="users">
+                <div class="card">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-users me-2"></i>Управление сотрудниками
+                        </h6>
+                        <button class="btn btn-primary btn-sm" onclick="app.openAddUserModal()">
+                            <i class="fas fa-user-plus me-1"></i>Добавить сотрудника
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ФИО</th>
+                                        <th>Email</th>
+                                        <th class="text-center">Дежурств за неделю</th>
+                                        <th>Статус</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody">
+                                    <!-- Данные будут заполнены JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Вкладка Отсутствия -->
+            <div class="tab-pane fade" id="absences">
+                <div class="card">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-user-slash me-2"></i>Учет отсутствий
+                        </h6>
+                        <button class="btn btn-primary btn-sm" onclick="app.openAddAbsenceModal()">
+                            <i class="fas fa-plus me-1"></i>Добавить отсутствие
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Сотрудник</th>
+                                        <th>Период отсутствия</th>
+                                        <th class="text-center">Дней</th>
+                                        <th>Причина</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="absencesTableBody">
+                                    <!-- Данные будут заполнены JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Вкладка Статистика -->
+            <div class="tab-pane fade" id="statistics">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-chart-bar me-2"></i>Статистика по сотрудникам
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Сотрудник</th>
+                                                <th class="text-center">Дежурств (неделя)</th>
+                                                <th class="text-center">Дежурств (всего)</th>
+                                                <th class="text-center">Среднее в неделю</th>
+                                                <th class="text-center">Статус</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="statisticsTableBody">
+                                            <!-- Данные будут заполнены JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="card-title mb-0">Общая статистика</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <strong>Всего сотрудников:</strong>
+                                    <span id="totalUsers" class="float-end">0</span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Активных сотрудников:</strong>
+                                    <span id="activeUsers" class="float-end">0</span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Отсутствующих:</strong>
+                                    <span id="absentUsers" class="float-end">0</span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Дежурств за неделю:</strong>
+                                    <span id="totalDutiesWeek" class="float-end">0</span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Среднее на человека:</strong>
+                                    <span id="averagePerUser" class="float-end">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальные окна -->
+    <!-- Модальное окно дежурства -->
+    <div class="modal fade" id="dutyModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Назначить дежурство</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="dutyForm">
+                        <div class="mb-3">
+                            <label class="form-label">Дата и время</label>
+                            <input type="text" class="form-control" id="dutyDateTime" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Дежурный</label>
+                            <select class="form-select" id="dutyUser">
+                                <option value="">-- Выберите сотрудника --</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-danger" onclick="app.clearDutySlot()">Очистить</button>
+                    <button type="button" class="btn btn-primary" onclick="app.saveDuty()">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно добавления сотрудника -->
+    <div class="modal fade" id="addUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить сотрудника</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="userForm">
+                        <div class="mb-3">
+                            <label class="form-label">ФИО</label>
+                            <input type="text" class="form-control" id="userName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="userEmail" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="app.saveUser()">Добавить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно добавления отсутствия -->
+    <div class="modal fade" id="addAbsenceModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить отсутствие</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="absenceForm">
+                        <div class="mb-3">
+                            <label class="form-label">Сотрудник</label>
+                            <select class="form-select" id="absenceUser" required>
+                                <option value="">-- Выберите сотрудника --</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Дата начала</label>
+                            <input type="date" class="form-control" id="absenceStart" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Дата окончания</label>
+                            <input type="date" class="form-control" id="absenceEnd" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Причина</label>
+                            <select class="form-select" id="absenceReason" required>
+                                <option value="">-- Выберите причину --</option>
+                                <option value="отпуск">Отпуск</option>
+                                <option value="больничный">Больничный</option>
+                                <option value="командировка">Командировка</option>
+                                <option value="другое">Другое</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="app.saveAbsence()">Добавить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно настроек системы -->
+    <div class="modal fade" id="systemSettingsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Настройки системы</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Время дежурств</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Начало дежурства</label>
+                                <input type="time" class="form-control" id="dutyStartTime" value="07:00">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Окончание дежурства</label>
+                                <input type="time" class="form-control" id="dutyEndTime" value="18:00">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Продолжительность дежурства (часы)</label>
+                                <input type="number" class="form-control" id="dutyDuration" value="1" min="1" max="24">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="app.saveSystemSettings()">Сохранить настройки</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно настроек недели -->
+    <div class="modal fade" id="weekSettingsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Настройки недели</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Выберите рабочие дни для текущей недели:</p>
+                    <div id="workDaysSettings">
+                        <!-- Настройки дней будут заполнены JavaScript -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="app.saveWeekSettings()">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
